@@ -112,6 +112,8 @@ for filename in os.listdir('.'):
         #candidate_song = json.dumps(candidate_song)
         track_list.append(candidate_song)
 
+
+# Create a json representation of the album ID3 metadata and write it to a info.json file
 album = {
     "title": album_title,
     "artist": album_artist,
@@ -124,7 +126,6 @@ album = {
     "album_art": "album_art.jpg",
     "genres": album_genres 
 }
-
 album = json.dumps(album)
 
 
