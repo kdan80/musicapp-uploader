@@ -35,17 +35,6 @@ from tinytag import TinyTag
 # print('\nEnter number of discs:')
 # album_number_of_discs = int(input())
 
-
-# audio = TinyTag.get('new.alexandria.mp3')
-# album = audio.album
-# artist = audio.artist
-# title = audio.title
-# track = audio.track
-# duration = audio.duration
-# genre = audio.genre
-# year = audio.year
-# print(year)
-
 def getDuration(mp3):
     ff = FFprobe(
         inputs={ mp3: '-show_entries format=duration -v quiet -of csv="p=0"'},
@@ -57,32 +46,88 @@ def getDuration(mp3):
     return duration
 
 track_list = []
+album_duration = 0
+album_artist = "" 
+album_title = ""
+album_comment = ""
+album_release_year = 0000
+album_number_of_discs = 1
+album_featured_artists = [] 
+album_genres = []
+album_art = 'album_art.jpg'
 
 # Loop through all mp3 files and extract ID3 metadata
 for filename in os.listdir('.'):
-    if filename.endswith('.mp3'):
-        audio = TinyTag.get(filename)
-        album = audio.album
-        artist = audio.artist
-        title = audio.title
-        track = audio.track
-        disc = audio.disc
-        genre = audio.genre
-        year = audio.year
-        duration = getDuration(filename)
-        
-        candidate_song = {
-            "title": title,
-            "artitst": artist,
-            "featured_artists": [""],
-            "disc_number": disc,
-            "track_number": track,
-            "duration": duration,
-            "release_year": year,
-            "genres": [genre]
-        }
+    rack_featured_artistst = []
 
-        candidate_song = json.dumps(candidate_song)
+    if filename.endswith('.mp3'):
+
+        # Extract ID3 tags from audio files
+        audio = TinyTag.get(filename)
+        track_artist = audio.albumartist
+        track_title = audio.title
+        track_disc = int(audio.disc.lstrip('0'))
+        track_number = int(audio.track.lstrip('0'))
+        track_genres = audio.genre.split(' / ')
+        track_year = int(audio.year)
+
+        # Get the relevant album metadata
+        album_artist = audio.albumartist
+        album_title = audio.album
+        album_comment = audio.comment
+        album_release_year = audio.year
+        
+        # Split artists into an array, (ID3 artist tags should be separated by ' / ')
+        track_featured_artists = audio.artist.split(' / ')
+
+        # Get individual track duration and calculate album total duration
+        track_duration = getDuration(filename)
+        album_duration += track_duration
+
+        # Get all the featured artists (compilations, soundtracks etc may have many artists)
+        for artist in track_featured_artists:
+            if artist not in album_featured_artists:
+                album_featured_artists.append(artist)
+
+        # Do the exact same thing for genres
+        for genre in track_genres:
+            if genre not in album_genres:
+                album_genres.append(genre)
+
+        # Calculate number of discs
+        if (int(track_disc) > int(album_number_of_discs)):
+            album_number_of_discs = track_disc
+
+        # Take all the extracted metadata and compile an object to represent each track
+        candidate_song = {
+            "title": track_title,
+            "artist": track_artist,
+            "featured_artists": track_featured_artists,
+            "disc_number": track_disc,
+            "track_number": track_number,
+            "duration": track_duration,
+            "release_year": track_year,
+            "genres": track_genres
+        }
+        #candidate_song = json.dumps(candidate_song)
         track_list.append(candidate_song)
 
+album = {
+    "title": album_title,
+    "artist": album_artist,
+    "featured_artists": album_featured_artists,
+    "track_list": track_list,
+    "duration": album_duration,
+    "release_year": album_release_year,
+    "comment": album_comment,
+    "number_of_discs": album_number_of_discs,
+    "album_art": "album_art.jpg",
+    "genres": album_genres 
+}
 
+album = json.dumps(album)
+
+
+f = open("info.json", "w")
+f.write(album)
+f.close()
