@@ -91,9 +91,10 @@ for filename in os.listdir('.'):
             image_data = audio.get_image()
             image_data_hex = image_data.hex()
             image_ext = getImageFileExt(image_data_hex)
-            album_art = f'album_art{image_ext}'
-            with open(album_art, 'wb') as file:
-                file.write(image_data)
+            if image_ext != 'unknown':
+                album_art = f'album_art{image_ext}'
+                with open(album_art, 'wb') as file:
+                    file.write(image_data)
 
         # Get the relevant album metadata
         album_artist = audio.albumartist
