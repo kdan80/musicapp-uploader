@@ -7,6 +7,20 @@ import sys, os, subprocess, json
 from ffmpy import FFmpeg, FFprobe
 from tinytag import TinyTag
 
+# Magic numbers/file signatures
+file_sigs = {
+    '.jpg': 'ffd8ffe',
+    '.png': '89504e470d0a1a0a',
+    '.bmp': '424d'
+}
+
+def getImageFileExt(hex_img):
+    hex_img = hex_img.lower()
+    if hex_img[0:7] == 'ffd8ffe':
+        return '.jpg'
+    if hex_img[0:15] == '89504e470d0a1a0a':
+        return '.png'
+    return 'unknown'
 
 # print('\nEnter album name:')
 # album_title = input()
@@ -54,7 +68,8 @@ album_release_year = 0000
 album_number_of_discs = 1
 album_featured_artists = [] 
 album_genres = []
-album_art = 'album_art.jpg'
+album_art = ''
+image_data = None
 
 # Loop through all mp3 files and extract ID3 metadata
 for filename in os.listdir('.'):
@@ -63,13 +78,22 @@ for filename in os.listdir('.'):
     if filename.endswith('.mp3'):
 
         # Extract ID3 tags from audio files
-        audio = TinyTag.get(filename)
+        audio = TinyTag.get(filename, image=True)
         track_artist = audio.albumartist
         track_title = audio.title
         track_disc = int(audio.disc.lstrip('0'))
         track_number = int(audio.track.lstrip('0'))
         track_genres = audio.genre.split(' / ')
         track_year = int(audio.year)
+
+        # Get the cover art
+        if not image_data:
+            image_data = audio.get_image()
+            image_data_hex = image_data.hex()
+            image_ext = getImageFileExt(image_data_hex)
+            album_art = f'album_art{image_ext}'
+            with open(album_art, 'wb') as file:
+                file.write(image_data)
 
         # Get the relevant album metadata
         album_artist = audio.albumartist
