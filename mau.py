@@ -58,6 +58,7 @@ for filename in os.listdir('.'):
         track_number = int(audio.track.lstrip('0'))
         track_genres = audio.genre.split(' / ')
         track_year = int(audio.year)
+        track_path = filename
 
         # Get the cover art
         if not image_data:
@@ -107,6 +108,7 @@ for filename in os.listdir('.'):
             "track_number": track_number,
             "duration": track_duration,
             "release_year": track_year,
+            "path": track_path,
             "genres": track_genres
         }
         #candidate_song = json.dumps(candidate_song)
