@@ -3,8 +3,8 @@
 # This file will need to have the execute permission set
 # chmod +x ./mau.py
 
-import sys, os, subprocess, json
-from ffmpy import FFmpeg, FFprobe
+import os, subprocess, json
+from ffmpy import FFprobe
 from tinytag import TinyTag
 
 # Magic numbers/file signatures
@@ -21,33 +21,6 @@ def getImageFileExt(hex_img):
     if hex_img[0:15] == '89504e470d0a1a0a':
         return '.png'
     return 'unknown'
-
-# print('\nEnter album name:')
-# album_title = input()
-
-# print('\nEnter album artist:')
-# album_artist = input()
-
-
-# album_featured_artists = []
-# cancel = False
-# while not cancel:
-#     print('\nEnter any additional artists or type "q" to cancel:')
-#     artist = input()
-#     if artist == 'q':
-#         break
-#     album_featured_artists.append(artist)
-
-
-# print('\nEnter album release year')
-# album_release_year = int(input())
-# print(album_release_year)
-
-# print('\nEnter a description of the album:')
-# album_comment = input()
-
-# print('\nEnter number of discs:')
-# album_number_of_discs = int(input())
 
 def getDuration(mp3):
     ff = FFprobe(
@@ -152,7 +125,6 @@ album = {
     "genres": album_genres 
 }
 album = json.dumps(album)
-
 
 f = open("info.json", "w")
 f.write(album)
