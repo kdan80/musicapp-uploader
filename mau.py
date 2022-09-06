@@ -34,9 +34,9 @@ def getDuration(mp3):
 
 track_list = []
 album_duration = 0
-album_artist = "" 
-album_title = ""
-album_comment = ""
+album_artist = ''
+album_title = ''
+album_comment = ''
 album_release_year = 0000
 album_number_of_discs = 1
 album_featured_artists = [] 
@@ -62,12 +62,14 @@ for filename in os.listdir('.'):
         # Get the cover art
         if not image_data:
             image_data = audio.get_image()
-            image_data_hex = image_data.hex()
-            image_ext = getImageFileExt(image_data_hex)
-            if image_ext != 'unknown':
-                album_art = f'album_art{image_ext}'
-                with open(album_art, 'wb') as file:
-                    file.write(image_data)
+
+            if image_data != None:
+                image_data_hex = image_data.hex()
+                image_ext = getImageFileExt(image_data_hex)
+                if image_ext != 'unknown':
+                    album_art = f'album_art{image_ext}'
+                    with open(album_art, 'wb') as file:
+                        file.write(image_data)
 
         # Get the relevant album metadata
         album_artist = audio.albumartist
@@ -121,7 +123,7 @@ album = {
     "release_year": album_release_year,
     "comment": album_comment,
     "number_of_discs": album_number_of_discs,
-    "album_art": "album_art.jpg",
+    "album_art": album_art,
     "genres": album_genres 
 }
 album = json.dumps(album)
