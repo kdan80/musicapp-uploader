@@ -3,7 +3,7 @@
 # This file will need to have the execute permission set
 # chmod +x ./mau.py
 
-import os, subprocess, json
+import os, subprocess, json, math
 from ffmpy import FFprobe
 from tinytag import TinyTag
 
@@ -30,6 +30,7 @@ def getDuration(mp3):
     duration = duration[0].decode('utf-8')
     duration = duration.strip()
     duration = float(duration)
+    duration = int(math.floor(duration))
     return duration
 
 track_list = []
@@ -106,7 +107,7 @@ for filename in os.listdir('.'):
             "featured_artists": track_featured_artists,
             "disc_number": track_disc,
             "track_number": track_number,
-            "duration": track_duration,
+            "duration": int(math.floor(track_duration)),
             "release_year": track_year,
             "filename": track_filename,
             "genres": track_genres
@@ -121,7 +122,7 @@ album = {
     "artist": album_artist,
     "featured_artists": album_featured_artists,
     "track_list": track_list,
-    "duration": album_duration,
+    "duration": int(math.floor(album_duration)),
     "release_year": album_release_year,
     "comment": album_comment,
     "number_of_discs": album_number_of_discs,
