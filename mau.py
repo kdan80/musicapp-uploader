@@ -6,6 +6,49 @@
 import os, subprocess, json, math
 from ffmpy import FFprobe
 from tinytag import TinyTag
+from dotenv import load_dotenv
+from minio import Minio
+from minio.error import S3Error
+import os, sys
+
+load_dotenv()
+
+BUCKET = os.environ.get("BUCKET")
+SERVER = os.environ.get("SERVER")
+ACCESS_KEY = os.environ.get("ACCESS_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+client = Minio(
+            SERVER,
+            secure=False,
+            access_key=ACCESS_KEY,
+            secret_key=SECRET_KEY,
+        )
+
+def checkBucketExists(bucket):
+    return client.bucket_exists(bucket)
+
+def createBucket(bucket):
+    try:
+        client.make_bucket(bucket)
+    except S3Error as err:
+        print("Bucket creation error: ", err)
+        print("Exiting...") 
+        sys.exit(1)
+
+def uploadFile(bucket, artist, album, file):
+    try:
+        filename = f"{artist}/{album}/{os.path.basename(file)}"
+        client.fput_object(bucket, file, filename)
+    except S3Error as err:
+        print("File upload error: ", err)
+        print("Exiting...") 
+        sys.exit(1) 
+
+# Before we do anything check the minio bucket exists
+bucketExists = checkBucketExists(BUCKET)
+if not bucketExists:
+    createBucket(BUCKET)
 
 # Magic numbers/file signatures
 file_sigs = {
@@ -60,6 +103,7 @@ for filename in os.listdir('.'):
         track_genres = audio.genre.split(' / ')
         track_year = int(audio.year)
         track_filename = filename
+        track_path = os.path.abspath(filename)
 
         # Get the cover art
         if not image_data:
@@ -115,6 +159,8 @@ for filename in os.listdir('.'):
         #candidate_song = json.dumps(candidate_song)
         track_list.append(candidate_song)
 
+        
+
 
 # Create a json representation of the album ID3 metadata and write it to an info.json file
 album = {
@@ -134,3 +180,4 @@ album = json.dumps(album)
 f = open("info.json", "w")
 f.write(album)
 f.close()
+
