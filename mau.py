@@ -18,6 +18,7 @@ SERVER = os.environ.get("SERVER")
 ACCESS_KEY = os.environ.get("ACCESS_KEY")
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
+
 client = Minio(
             SERVER,
             secure=False,
@@ -33,17 +34,18 @@ def createBucket(bucket):
         client.make_bucket(bucket)
     except S3Error as err:
         print("Bucket creation error: ", err)
-        print("Exiting...") 
+        print("Exiting...")
         sys.exit(1)
 
 def uploadFile(bucket, artist, album, file):
     try:
         filename = f"{artist}/{album}/{os.path.basename(file)}"
-        client.fput_object(bucket, file, filename)
+        client.fput_object(bucket, filename, file)
+        print(f"{filename} was uploaded")
     except S3Error as err:
         print("File upload error: ", err)
-        print("Exiting...") 
-        sys.exit(1) 
+        print("Exiting...")
+        sys.exit(1)
 
 # Before we do anything check the minio bucket exists
 bucketExists = checkBucketExists(BUCKET)
@@ -83,7 +85,7 @@ album_title = ''
 album_comment = ''
 album_release_year = 0000
 album_number_of_discs = 1
-album_featured_artists = [] 
+album_featured_artists = []
 album_genres = []
 album_art = ''
 image_data = None
@@ -93,6 +95,7 @@ for filename in os.listdir('.'):
     rack_featured_artistst = []
 
     if filename.endswith('.mp3'):
+        #print(os.path.abspath(filename))
 
         # Extract ID3 tags from audio files
         audio = TinyTag.get(filename, image=True)
@@ -122,7 +125,7 @@ for filename in os.listdir('.'):
         album_title = audio.album
         album_comment = audio.comment
         album_release_year = audio.year
-        
+
         # Split artists into an array, (ID3 artist tags should be separated by ' / ')
         track_featured_artists = audio.artist.split(' / ')
 
@@ -159,7 +162,8 @@ for filename in os.listdir('.'):
         #candidate_song = json.dumps(candidate_song)
         track_list.append(candidate_song)
 
-        
+        # Upload the file to minio bucket
+        uploadFile(BUCKET, album_artist, album_title, track_path)
 
 
 # Create a json representation of the album ID3 metadata and write it to an info.json file
@@ -173,7 +177,7 @@ album = {
     "comment": album_comment,
     "number_of_discs": album_number_of_discs,
     "album_art": album_art,
-    "genres": album_genres 
+    "genres": album_genres
 }
 album = json.dumps(album)
 
@@ -181,3 +185,6 @@ f = open("info.json", "w")
 f.write(album)
 f.close()
 
+# Upload the json file and album art to the minio bucket
+uploadFile(BUCKET, album_artist, album_title, album_art)
+uploadFile(BUCKET, album_artist, album_title, "info.json")
