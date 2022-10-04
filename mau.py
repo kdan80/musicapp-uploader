@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from minio import Minio
 from minio.error import S3Error
 import os, sys
+import requests
 
 load_dotenv()
 
@@ -17,7 +18,7 @@ BUCKET = os.environ.get("BUCKET")
 SERVER = os.environ.get("SERVER")
 ACCESS_KEY = os.environ.get("ACCESS_KEY")
 SECRET_KEY = os.environ.get("SECRET_KEY")
-
+UPLOAD_URL = os.environ.get("UPLOAD_URL")
 
 client = Minio(
             SERVER,
@@ -90,6 +91,10 @@ album_genres = []
 album_art = ''
 image_data = None
 
+# Grab the comment from comment.txt
+with open('comment.txt', 'r') as file:
+    album_comment = file.read().replace('\n', '')
+
 # Loop through all mp3 files and extract ID3 metadata
 for filename in os.listdir('.'):
     rack_featured_artistst = []
@@ -123,7 +128,6 @@ for filename in os.listdir('.'):
         # Get the relevant album metadata
         album_artist = audio.albumartist
         album_title = audio.album
-        album_comment = audio.comment
         album_release_year = audio.year
 
         # Split artists into an array, (ID3 artist tags should be separated by ' / ')
@@ -165,7 +169,6 @@ for filename in os.listdir('.'):
         # Upload the file to minio bucket
         uploadFile(BUCKET, album_artist, album_title, track_path)
 
-
 # Create a json representation of the album ID3 metadata and write it to an info.json file
 album = {
     "title": album_title,
@@ -187,4 +190,24 @@ f.close()
 
 # Upload the json file and album art to the minio bucket
 uploadFile(BUCKET, album_artist, album_title, album_art)
-uploadFile(BUCKET, album_artist, album_title, "info.json")
+#uploadFile(BUCKET, album_artist, album_title, "info.json")
+
+req = requests.post(UPLOAD_URL, json={
+    "album": album_title,
+    "artist": album_artist,
+    "comment": album_comment,
+    "info": {
+        "title": album_title,
+        "artist": album_artist,
+        "featured_artists": album_featured_artists,
+        "track_list": track_list,
+        "duration": int(math.floor(album_duration)),
+        "release_year": album_release_year,
+        "comment": album_comment,
+        "number_of_discs": album_number_of_discs,
+        "album_art": album_art,
+        "genres": album_genres
+    }
+})
+
+print("Status: ", req.text)
